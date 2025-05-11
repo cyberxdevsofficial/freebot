@@ -76,29 +76,35 @@ router.get("/", async (req, res) => {
               `${randomMegaId()}.json`
             );
 
-            const string_session = mega_url.replace(
+            const string_session = "mahii-md_" + mega_url.replace(
               "https://mega.nz/file/",
               ""
             );
 
-            const sid = `*MAHII-MD Connected Succesfully ✅*\n\n👉 ${string_session} 👈\n\n*This is the your Session ID, copy this id and paste into config.js file*\n\n*You can ask any question using this link*\n\n*https://wa.me/94715450089*`;
-            const mg = `🛑 *Do not share this code to anyone* 🛑\n\n *මේක කාටවත් දාන්න එපා*`;
-            const dt = await RobinPairWeb.sendMessage(user_jid, {
+            // ✅ Updated Professional Message
+            const sid = `*✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:* \n👉 ${string_session} 👈\n\n📌 *Please copy and paste this Session ID into your* \`config.js\` *file to activate your bot.*\n\n💬 *Need help? Contact support:* \nhttps://wa.me/94715450089`;
+
+            const mg = `⚠️ *Security Notice:*\n\n*Do NOT share this Session ID with anyone.*\n*මෙම කේතය කිසිවෙකුටත් ලබා නොදෙන්න. ඔබගේ ගිණුම සුරක්ෂිත විය යුතුය.*`;
+
+            await RobinPairWeb.sendMessage(user_jid, {
               image: {
                 url: "https://raw.githubusercontent.com/Mahii-Botz/Mahii-md-LOGO/refs/heads/main/ChatGPT%20Image%20Apr%2021%2C%202025%2C%2005_32_50%20PM.png",
               },
               caption: sid,
             });
-            const msg = await RobinPairWeb.sendMessage(user_jid, {
+
+            await RobinPairWeb.sendMessage(user_jid, {
               text: string_session,
             });
-            const msg1 = await RobinPairWeb.sendMessage(user_jid, { text: mg });
+
+            await RobinPairWeb.sendMessage(user_jid, { text: mg });
+
           } catch (e) {
             exec("pm2 restart prabath");
           }
 
           await delay(100);
-          return await removeFile("./session");
+          await removeFile("./session");
           process.exit(0);
         } else if (
           connection === "close" &&
