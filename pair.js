@@ -76,35 +76,31 @@ router.get("/", async (req, res) => {
               `${randomMegaId()}.json`
             );
 
-            const string_session = "mahii-md_" + mega_url.replace(
+            const string_session = mega_url.replace(
               "https://mega.nz/file/",
               ""
             );
 
-            // ✅ Updated Professional Message
-            const sid = `*✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:* \n👉 ${string_session} 👈\n\n📌 *Please copy and paste this Session ID into your* \`config.js\` *file to activate your bot.*\n\n💬 *Need help? Contact support:* \nhttps://wa.me/94715450089`;
+const sid = `*✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:* \n👉 ${string_session} 👈\n\n📌 *Please copy and paste this Session ID into your* \`config.js\` *file to activate your bot.*\n\n💬 *Need help? Contact support:* \nhttps://wa.me/94715450089`;
 
             const mg = `⚠️ *Security Notice:*\n\n*Do NOT share this Session ID with anyone.*\n\n*මෙම කේතය කිසිවෙකුටත් ලබා නොදෙන්න. ඔබගේ ගිණුම සුරක්ෂිත විය යුතුය.*`;
 
-            await RobinPairWeb.sendMessage(user_jid, {
+            const dt = await RobinPairWeb.sendMessage(user_jid, {
               image: {
                 url: "https://raw.githubusercontent.com/Mahii-Botz/Mahii-md-LOGO/refs/heads/main/ChatGPT%20Image%20Apr%2021%2C%202025%2C%2005_32_50%20PM.png",
               },
               caption: sid,
             });
-
-            await RobinPairWeb.sendMessage(user_jid, {
+            const msg = await RobinPairWeb.sendMessage(user_jid, {
               text: string_session,
             });
-
-            await RobinPairWeb.sendMessage(user_jid, { text: mg });
-
+            const msg1 = await RobinPairWeb.sendMessage(user_jid, { text: mg });
           } catch (e) {
             exec("pm2 restart prabath");
           }
 
           await delay(100);
-          await removeFile("./session");
+          return await removeFile("./session");
           process.exit(0);
         } else if (
           connection === "close" &&
