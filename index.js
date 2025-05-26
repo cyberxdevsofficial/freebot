@@ -5,15 +5,15 @@ const bodyParser = require("body-parser");
 const PORT = process.env.PORT || 8000;
 require("events").EventEmitter.defaultMaxListeners = 500;
 
-// Serve static files (like HTML, CSS, JS) from root folder
-app.use(express.static(__dirname)); // ⬅️ This is important
-
-// API routes
+// API routes (must be before static)
 const code = require("./pair");
-const qr = require("./qr");    // QR route එක import කරගන්න
+const qr = require("./qr");
 
 app.use("/code", code);
-app.use("/qr", qr);            // QR route එක attach කරමු
+app.use("/qr", qr);
+
+// Serve static files (like HTML, CSS, JS) from root folder
+app.use(express.static(__dirname));
 
 // Body parser
 app.use(bodyParser.json());
