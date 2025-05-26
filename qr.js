@@ -29,7 +29,7 @@ router.get("/qr", async (req, res) => {
           creds: state.creds,
           keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
         },
-        printQRInTerminal: false,
+        printQRInTerminal:true,
         logger: pino({ level: "fatal" }),
         browser: Browsers.macOS("Safari"),
       });
