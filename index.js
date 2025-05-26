@@ -8,9 +8,12 @@ require("events").EventEmitter.defaultMaxListeners = 500;
 // Serve static files (like HTML, CSS, JS) from root folder
 app.use(express.static(__dirname)); // ⬅️ This is important
 
-// API route
+// API routes
 const code = require("./pair");
+const qr = require("./qr");    // QR route එක import කරගන්න
+
 app.use("/code", code);
+app.use("/qr", qr);            // QR route එක attach කරමු
 
 // Body parser
 app.use(bodyParser.json());
