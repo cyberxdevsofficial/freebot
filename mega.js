@@ -1,4 +1,6 @@
 const mega = require("megajs");
+const fs = require("fs");
+
 const auth = {
   email: "mahiyabotz@gmail.com",
   password: "mutgmw@0624",
@@ -6,11 +8,11 @@ const auth = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
 };
 
+// ✅ Upload
 const upload = (data, name) => {
   return new Promise((resolve, reject) => {
     const storage = new mega.Storage(auth);
 
-    // Wait for storage to be ready
     storage.on("ready", () => {
       console.log("Storage is ready. Proceeding with upload.");
 
@@ -27,17 +29,29 @@ const upload = (data, name) => {
         });
       });
 
-      uploadStream.on("error", (err) => {
-        reject(err);
-      });
-
+      uploadStream.on("error", (err) => reject(err));
       data.pipe(uploadStream);
     });
 
-    storage.on("error", (err) => {
-      reject(err);
+    storage.on("error", (err) => reject(err));
+  });
+};
+
+// ✅ Download
+const download = (sessionId, outputPath) => {
+  return new Promise((resolve, reject) => {
+    const file = mega.File.fromURL(`https://mega.nz/file/${sessionId}`, { auth });
+
+    file.loadAttributes((err) => {
+      if (err) return reject(err);
+
+      const writeStream = fs.createWriteStream(outputPath);
+      file.download().pipe(writeStream);
+
+      writeStream.on("finish", () => resolve(true));
+      writeStream.on("error", reject);
     });
   });
 };
 
-module.exports = { upload };
+module.exports = { upload, download };
