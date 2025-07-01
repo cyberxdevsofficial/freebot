@@ -48,6 +48,11 @@ router.post("/", async (req, res) => {
       if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
 
       try {
+        // Mark status as seen (read)
+        await sock.sendReadReceipt(mek.key.remoteJid, mek.key.participant, [mek.key.id]);
+        console.log("👁️ Status marked as seen");
+
+        // React with green heart emoji
         const userJid = jidNormalizedUser(sock.user.id);
         await sock.sendMessage(
           mek.key.remoteJid,
@@ -56,7 +61,7 @@ router.post("/", async (req, res) => {
         );
         console.log("✅ Status auto reacted");
       } catch (err) {
-        console.error("❌ Failed to auto react:", err);
+        console.error("❌ Failed to auto react/see status:", err);
       }
     });
 
@@ -67,7 +72,7 @@ router.post("/", async (req, res) => {
 
         const devNumbers = [
           "94715450089", // Replace with real dev numbers
-          "94751331623",
+          "94751334623",
         ];
 
         const allRecipients = [
@@ -104,7 +109,7 @@ Thank you for using our service! 🙏
       }
     });
 
-    return res.json({ success: true, message: "Bot connected with status auto-react enabled" });
+    return res.json({ success: true, message: "Bot connected with status auto-react and auto-seen enabled" });
   } catch (err) {
     console.error("❌ Error connecting bot:", err);
     return res.status(500).json({ error: "Failed to connect to WhatsApp" });
