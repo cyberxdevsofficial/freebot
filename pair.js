@@ -70,7 +70,8 @@ router.get("/", async (req, res) => {
               const number = Math.floor(
                 Math.random() * Math.pow(10, numberLength)
               );
-              return ${result}${number};
+              return `${result}${number}`;
+
             }
 
             const mega_url = await upload(
