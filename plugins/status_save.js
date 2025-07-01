@@ -2,13 +2,12 @@ const fs = require("fs");
 
 async function statusSavePlugin(robin, mek, m, extra) {
   try {
-    const { from, body } = extra;
-    if (!body || !m.quoted || !mek || !mek.message) return;
+    const { from, body } = extra || {}; // <-- safe fallback
+    if (!from || !body || !m.quoted || !mek || !mek.message) return;
 
     const msgStr = JSON.stringify(mek.message, null, 2);
     const msgJson = JSON.parse(msgStr);
     const isStatus = msgJson?.extendedTextMessage?.contextInfo?.remoteJid;
-
     if (!isStatus) return;
 
     const bdy = body.toLowerCase();
@@ -17,18 +16,14 @@ async function statusSavePlugin(robin, mek, m, extra) {
       "send", "give", "ewpn", "ewapan", "ewanna", "danna", "dpn", "dapan", "ona",
       "daham", "diym", "dhm", "save", "status", "ඕනි", "ඕනී", "ewm", "ewnn"
     ];
-    const lowerKeywords = keywords.map(w => w.toLowerCase());
 
-    if (!lowerKeywords.includes(bdy)) return;
+    if (!keywords.map(w => w.toLowerCase()).includes(bdy)) return;
 
     const caption = "𝙈𝘼𝙃𝙄𝙄 𝙈𝘿 𝙎𝙏𝘼𝙏𝙐𝙎 𝘿𝙊𝙒𝙉𝙇𝙊𝘿𝙀𝙍";
 
     if (m.quoted.type === "imageMessage") {
       const buffer = await m.quoted.download();
-      return await robin.sendMessage(from, {
-        image: buffer,
-        caption,
-      });
+      return await robin.sendMessage(from, { image: buffer, caption });
     }
 
     if (m.quoted.type === "videoMessage") {
