@@ -1,7 +1,5 @@
 const mega = require("megajs");
 const fs = require("fs");
-const path = require("path");
-const unzipper = require("unzipper");
 
 const auth = {
   email: "mahiyabotz@gmail.com",
@@ -10,67 +8,51 @@ const auth = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
 };
 
-// Upload a stream or file buffer (you may keep it same)
+// ✅ Upload
 const upload = (data, name) => {
   return new Promise((resolve, reject) => {
     const storage = new mega.Storage(auth);
 
     storage.on("ready", () => {
-      console.log("Storage ready. Uploading...");
+      console.log("Storage is ready. Proceeding with upload.");
 
       const uploadStream = storage.upload({ name, allowUploadBuffering: true });
 
       uploadStream.on("complete", (file) => {
         file.link((err, url) => {
-          if (err) reject(err);
-          else {
+          if (err) {
+            reject(err);
+          } else {
             storage.close();
             resolve(url);
           }
         });
       });
 
-      uploadStream.on("error", reject);
+      uploadStream.on("error", (err) => {
+        storage.close();
+        reject(err);
+      });
 
       data.pipe(uploadStream);
     });
 
-    storage.on("error", reject);
+    storage.on("error", (err) => reject(err));
   });
 };
 
-// Download and unzip the session ZIP file to folderPath
-const download = (sessionId, folderPath) => {
+// ✅ Download
+const download = (sessionId, outputPath) => {
   return new Promise((resolve, reject) => {
-    const url = `https://mega.nz/file/${sessionId}`;
-
-    const file = mega.File.fromURL(url, { auth });
+    const file = mega.File.fromURL(`https://mega.nz/file/${sessionId}`, { auth });
 
     file.loadAttributes((err) => {
       if (err) return reject(err);
 
-      // Create write stream for the downloaded zip file
-      const zipPath = path.join(folderPath, "session.zip");
-
-      // Make sure folder exists
-      if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-
-      const writeStream = fs.createWriteStream(zipPath);
-
+      const writeStream = fs.createWriteStream(outputPath);
       file.download().pipe(writeStream);
 
-      writeStream.on("finish", () => {
-        // Unzip the session.zip into folderPath
-        fs.createReadStream(zipPath)
-          .pipe(unzipper.Extract({ path: folderPath }))
-          .on("close", () => {
-            // Delete the zip after extraction
-            fs.unlinkSync(zipPath);
-            resolve(true);
-          })
-          .on("error", reject);
-      });
-
+      writeStream.on("finish", () => resolve(true));
       writeStream.on("error", reject);
     });
   });
