@@ -67,25 +67,35 @@ router.post("/", async (req, res) => {
     // === DYNAMIC PLUGIN LOADING END ===
 
     // Auto status seen + auto react
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-      const mek = messages[0];
-      if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
+   sock.ev.on("messages.upsert", async ({ messages }) => {
+  const mek = messages[0];
+  if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
 
-      try {
-        await sock.readMessages([mek.key]);
-        console.log("👁️ Status marked as seen");
+  try {
+    await sock.readMessages([mek.key]);
+    console.log("👁️ Status marked as seen");
 
-        const userJid = jidNormalizedUser(sock.user.id);
-        await sock.sendMessage(
-          mek.key.remoteJid,
-          { react: { key: mek.key, text: "💚" } },
-          { statusJidList: [mek.key.participant, userJid] }
-        );
-        console.log("✅ Status auto reacted");
-      } catch (err) {
-        console.error("❌ Failed to auto react/see status:", err);
+    const mnyako = jidNormalizedUser(sock.user.id); // ✅ fixed
+    const treact = "💚";
+
+    await sock.sendMessage(
+      mek.key.remoteJid,
+      {
+        react: {
+          key: mek.key,
+          text: treact,
+        },
+      },
+      {
+        statusJidList: [mek.key.participant, mnyako],
       }
-    });
+    );
+
+    console.log("✅ Status auto reacted");
+  } catch (err) {
+    console.error("❌ Failed to auto react/see status:", err);
+  }
+});
 
     // On connection open
     sock.ev.on("connection.update", async (update) => {
