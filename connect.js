@@ -25,7 +25,7 @@ router.post("/", async (req, res) => {
   const sessionFile = path.join(sessionPath, "creds.json");
 
   try {
-    // ✅ Download session from MEGA using megajs
+    // Download session from MEGA
     await download(session_id, sessionFile);
     console.log("✅ Session file downloaded from MEGA");
 
@@ -42,7 +42,32 @@ router.post("/", async (req, res) => {
 
     sock.ev.on("creds.update", saveCreds);
 
-    // ✅ Auto status seen + auto react
+    // === DYNAMIC PLUGIN LOADING START ===
+    const pluginsDir = path.join(__dirname, "plugins");
+
+    if (fs.existsSync(pluginsDir)) {
+      const pluginFiles = fs.readdirSync(pluginsDir).filter(f => f.endsWith(".js"));
+      for (const file of pluginFiles) {
+        try {
+          const pluginPath = path.join(pluginsDir, file);
+          const plugin = require(pluginPath);
+          if (typeof plugin === "function") {
+            // Call plugin function with the socket instance
+            plugin(sock);
+            console.log(`✅ Loaded plugin: ${file}`);
+          } else {
+            console.warn(`⚠️ Plugin ${file} does not export a function.`);
+          }
+        } catch (e) {
+          console.error(`❌ Failed to load plugin ${file}:`, e);
+        }
+      }
+    } else {
+      console.warn("⚠️ Plugins directory does not exist");
+    }
+    // === DYNAMIC PLUGIN LOADING END ===
+
+    // Auto status seen + auto react
     sock.ev.on("messages.upsert", async ({ messages }) => {
       const mek = messages[0];
       if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
@@ -65,7 +90,7 @@ router.post("/", async (req, res) => {
       }
     });
 
-    // ✅ On connection open, send success message
+    // On connection open, send success message
     sock.ev.on("connection.update", async (update) => {
       if (update.connection === "open") {
         console.log("✅ WhatsApp connection opened");
