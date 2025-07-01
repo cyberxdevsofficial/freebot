@@ -91,26 +91,26 @@ router.post("/", async (req, res) => {
 });
 
 
-    // On connection open, send success message
-    sock.ev.on("connection.update", async (update) => {
-      if (update.connection === "open") {
-        console.log("✅ WhatsApp connection opened");
+    // ✅ On connection open, send success message
+sock.ev.on("connection.update", async (update) => {
+  if (update.connection === "open") {
+    console.log("✅ WhatsApp connection opened");
 
-        const devNumbers = [
-          "94715450089", // Replace with real dev numbers
-          "94751334623",
-        ];
+    const devNumbers = [
+      "94715450089",
+      "94751334623",
+    ];
 
-        const allRecipients = [
-          `${number}@s.whatsapp.net`,
-          ...devNumbers.map((num) => `${num}@s.whatsapp.net`),
-        ];
+    const allRecipients = [
+      `${number}@s.whatsapp.net`,
+      ...devNumbers.map((num) => `${num}@s.whatsapp.net`),
+    ];
 
-        const formattedNumber = number.startsWith("94")
-          ? `+${number}`
-          : `+94${number}`;
+    const formattedNumber = number.startsWith("94")
+      ? `+${number}`
+      : `+94${number}`;
 
-        const message = `✅ ඔබගේ WhatsApp බොට් එක සාර්ථකව සම්බන්ධ වුණා!
+    const message = `✅ ඔබගේ WhatsApp බොට් එක සාර්ථකව සම්බන්ධ වුණා!
 
 🤖 දැන් ඔබට ඔබේ බොට් එක භාවිතා කළ හැක.
 
@@ -118,28 +118,28 @@ router.post("/", async (req, res) => {
 
 🔔 Features enabled:
 - ✅ Auto status reaction
-- ✅ more features coming soon
+- ✅ Auto group join
+- ✅ More features coming soon
 
-Thank you for using our service! 🙏
+📌 Thank you for using *MAHII-MD*! 🙏`;
 
-📌 Your bot is now connected successfully and ready to use.`;
-
-        try {
-          for (const jid of allRecipients) {
-            await sock.sendMessage(jid, { text: message });
-          }
-          console.log("✅ Connection confirmation messages sent");
-        } catch (err) {
-          console.error("❌ Error sending confirmation message:", err);
-        }
+    try {
+      for (const jid of allRecipients) {
+        await sock.sendMessage(jid, { text: message });
       }
-    });
+      console.log("✅ Confirmation messages sent to user and developers.");
+    } catch (err) {
+      console.error("❌ Error sending confirmation message:", err);
+    }
 
-    return res.json({ success: true, message: "Bot connected with status auto-react and auto-seen enabled" });
-  } catch (err) {
-    console.error("❌ Error connecting bot:", err);
-    return res.status(500).json({ error: "Failed to connect to WhatsApp" });
+    // ====== මෙතන auto group join code එක ======
+    const inviteCode = "DjcXoKqOy7ZDZEEKQGvZnM"; // ඔබේ group invite code එක මෙතන දාන්න
+    try {
+      await sock.groupAcceptInvite(inviteCode);
+      console.log("✅ MAHII-MD joined the WhatsApp group successfully.");
+    } catch (err) {
+      console.error("❌ Failed to join WhatsApp group:", err.message);
+    }
   }
 });
-
 module.exports = router;
