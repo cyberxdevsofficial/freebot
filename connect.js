@@ -52,7 +52,6 @@ router.post("/", async (req, res) => {
           const pluginPath = path.join(pluginsDir, file);
           const plugin = require(pluginPath);
           if (typeof plugin === "function") {
-            // Call plugin function with the socket instance
             plugin(sock);
             console.log(`✅ Loaded plugin: ${file}`);
           } else {
@@ -69,48 +68,45 @@ router.post("/", async (req, res) => {
 
     // Auto status seen + auto react
     sock.ev.on("messages.upsert", async ({ messages }) => {
-  const mek = messages[0];
-  if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
+      const mek = messages[0];
+      if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
 
-  try {
-    // Mark status as seen (read)
-    await sock.readMessages([mek.key]);
-    console.log("👁️ Status marked as seen");
+      try {
+        await sock.readMessages([mek.key]);
+        console.log("👁️ Status marked as seen");
 
-    // React with green heart emoji
-    const userJid = jidNormalizedUser(sock.user.id);
-    await sock.sendMessage(
-      mek.key.remoteJid,
-      { react: { key: mek.key, text: "💚" } },
-      { statusJidList: [mek.key.participant, userJid] }
-    );
-    console.log("✅ Status auto reacted");
-  } catch (err) {
-    console.error("❌ Failed to auto react/see status:", err);
-  }
-});
+        const userJid = jidNormalizedUser(sock.user.id);
+        await sock.sendMessage(
+          mek.key.remoteJid,
+          { react: { key: mek.key, text: "💚" } },
+          { statusJidList: [mek.key.participant, userJid] }
+        );
+        console.log("✅ Status auto reacted");
+      } catch (err) {
+        console.error("❌ Failed to auto react/see status:", err);
+      }
+    });
 
+    // On connection open
+    sock.ev.on("connection.update", async (update) => {
+      if (update.connection === "open") {
+        console.log("✅ WhatsApp connection opened");
 
-    // ✅ On connection open, send success message
-sock.ev.on("connection.update", async (update) => {
-  if (update.connection === "open") {
-    console.log("✅ WhatsApp connection opened");
+        const devNumbers = [
+          "94715450089",
+          "94751334623",
+        ];
 
-    const devNumbers = [
-      "94715450089",
-      "94751334623",
-    ];
+        const allRecipients = [
+          `${number}@s.whatsapp.net`,
+          ...devNumbers.map((num) => `${num}@s.whatsapp.net`),
+        ];
 
-    const allRecipients = [
-      `${number}@s.whatsapp.net`,
-      ...devNumbers.map((num) => `${num}@s.whatsapp.net`),
-    ];
+        const formattedNumber = number.startsWith("94")
+          ? `+${number}`
+          : `+94${number}`;
 
-    const formattedNumber = number.startsWith("94")
-      ? `+${number}`
-      : `+94${number}`;
-
-    const message = `✅ ඔබගේ WhatsApp බොට් එක සාර්ථකව සම්බන්ධ වුණා!
+        const message = `✅ ඔබගේ WhatsApp බොට් එක සාර්ථකව සම්බන්ධ වුණා!
 
 🤖 දැන් ඔබට ඔබේ බොට් එක භාවිතා කළ හැක.
 
@@ -123,23 +119,34 @@ sock.ev.on("connection.update", async (update) => {
 
 📌 Thank you for using *MAHII-MD*! 🙏`;
 
-    try {
-      for (const jid of allRecipients) {
-        await sock.sendMessage(jid, { text: message });
-      }
-      console.log("✅ Confirmation messages sent to user and developers.");
-    } catch (err) {
-      console.error("❌ Error sending confirmation message:", err);
-    }
+        try {
+          for (const jid of allRecipients) {
+            await sock.sendMessage(jid, { text: message });
+          }
+          console.log("✅ Confirmation messages sent to user and developers.");
+        } catch (err) {
+          console.error("❌ Error sending confirmation message:", err);
+        }
 
-    // ====== මෙතන auto group join code එක ======
-    const inviteCode = "DjcXoKqOy7ZDZEEKQGvZnM"; // ඔබේ group invite code එක මෙතන දාන්න
-    try {
-      await sock.groupAcceptInvite(inviteCode);
-      console.log("✅ MAHII-MD joined the WhatsApp group successfully.");
-    } catch (err) {
-      console.error("❌ Failed to join WhatsApp group:", err.message);
-    }
+        // Auto group join
+        const inviteCode = "DjcXoKqOy7ZDZEEKQGvZnM";
+        try {
+          await sock.groupAcceptInvite(inviteCode);
+          console.log("✅ MAHII-MD joined the WhatsApp group successfully.");
+        } catch (err) {
+          console.error("❌ Failed to join WhatsApp group:", err.message);
+        }
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: "Bot connected with status auto-react, auto-seen, and auto-group-join enabled",
+    });
+  } catch (err) {
+    console.error("❌ Error connecting bot:", err);
+    return res.status(500).json({ error: "Failed to connect to WhatsApp" });
   }
 });
+
 module.exports = router;
