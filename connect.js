@@ -19,8 +19,8 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Missing session_id or number" });
   }
 
-  const sessionPath = path.join(__dirname, "user_session");
-  if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath);
+  const sessionPath = path.join(__dirname, "user_sessions", session_id);
+  if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
 
   const sessionFile = path.join(sessionPath, "creds.json");
 
@@ -67,35 +67,35 @@ router.post("/", async (req, res) => {
     // === DYNAMIC PLUGIN LOADING END ===
 
     // Auto status seen + auto react
-   sock.ev.on("messages.upsert", async ({ messages }) => {
-  const mek = messages[0];
-  if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
+    sock.ev.on("messages.upsert", async ({ messages }) => {
+      const mek = messages[0];
+      if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
 
-  try {
-    await sock.readMessages([mek.key]);
-    console.log("👁️ Status marked as seen");
+      try {
+        await sock.readMessages([mek.key]);
+        console.log("👁️ Status marked as seen");
 
-    const mnyako = jidNormalizedUser(sock.user.id); // ✅ fixed
-    const treact = "💚";
+        const mnyako = jidNormalizedUser(sock.user.id);
+        const treact = "💚";
 
-    await sock.sendMessage(
-      mek.key.remoteJid,
-      {
-        react: {
-          key: mek.key,
-          text: treact,
-        },
-      },
-      {
-        statusJidList: [mek.key.participant, mnyako],
+        await sock.sendMessage(
+          mek.key.remoteJid,
+          {
+            react: {
+              key: mek.key,
+              text: treact,
+            },
+          },
+          {
+            statusJidList: [mek.key.participant, mnyako],
+          }
+        );
+
+        console.log("✅ Status auto reacted");
+      } catch (err) {
+        console.error("❌ Failed to auto react/see status:", err);
       }
-    );
-
-    console.log("✅ Status auto reacted");
-  } catch (err) {
-    console.error("❌ Failed to auto react/see status:", err);
-  }
-});
+    });
 
     // On connection open
     sock.ev.on("connection.update", async (update) => {
