@@ -1,4 +1,3 @@
-
 const express = require("express");
 const fs = require("fs");
 const { exec } = require("child_process");
@@ -21,8 +20,9 @@ function removeFile(FilePath) {
 
 router.get("/", async (req, res) => {
   let num = req.query.number;
+
   async function RobinPair() {
-   const { state, saveCreds } = await useMultiFileAuthState("./session");
+    const { state, saveCreds } = await useMultiFileAuthState("./session");
 
     try {
       let RobinPairWeb = makeWASocket({
@@ -48,6 +48,7 @@ router.get("/", async (req, res) => {
       }
 
       RobinPairWeb.ev.on("creds.update", saveCreds);
+
       RobinPairWeb.ev.on("connection.update", async (s) => {
         const { connection, lastDisconnect } = s;
         if (connection === "open") {
@@ -71,12 +72,12 @@ router.get("/", async (req, res) => {
                 Math.random() * Math.pow(10, numberLength)
               );
               return `${result}${number}`;
-
             }
 
+            // FIXED: Wrap in backticks for template literal usage
             const mega_url = await upload(
               fs.createReadStream(auth_path + "creds.json"),
-              ${randomMegaId()}.json
+              `${randomMegaId()}.json`
             );
 
             const string_session = mega_url.replace(
@@ -84,9 +85,10 @@ router.get("/", async (req, res) => {
               ""
             );
 
-const sid = *✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:* \n👉 ${string_session} 👈\n\n📌 *Please copy and paste this Session ID into your* \config.js\ *file to activate your bot.*\n\n💬 *Need help? Contact support:* \nhttps://wa.me/94715450089;
+            // Wrap multi-line strings with backticks, and escape backslash in config.js path
+            const sid = `*✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:* \n👉 ${string_session} 👈\n\n📌 *Please copy and paste this Session ID into your* \\config.js\\ *file to activate your bot.*\n\n💬 *Need help? Contact support:* \nhttps://wa.me/94715450089`;
 
-            const mg = ⚠️ *Security Notice:*\n\n*Do NOT share this Session ID with anyone.*\n\n*මෙම කේතය කිසිවෙකුටත් ලබා නොදෙන්න. ඔබගේ ගිණුම සුරක්ෂිත විය යුතුය.*;
+            const mg = `⚠️ *Security Notice:*\n\n*Do NOT share this Session ID with anyone.*\n\n*මෙම කේතය කිසිවෙකුටත් ලබා නොදෙන්න. ඔබගේ ගිණුම සුරක්ෂිත විය යුතුය.*`;
 
             const dt = await RobinPairWeb.sendMessage(user_jid, {
               image: {
@@ -94,16 +96,18 @@ const sid = *✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:*
               },
               caption: sid,
             });
+
             const msg = await RobinPairWeb.sendMessage(user_jid, {
               text: string_session,
             });
+
             const msg1 = await RobinPairWeb.sendMessage(user_jid, { text: mg });
           } catch (e) {
             exec("pm2 restart prabath");
           }
 
           await delay(100);
-          return await removeFile("./session");
+          await removeFile("./session");
           process.exit(0);
         } else if (
           connection === "close" &&
@@ -131,6 +135,6 @@ const sid = *✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:*
 process.on("uncaughtException", function (err) {
   console.log("Caught exception: " + err);
   exec("pm2 restart Robin");
-});  
+});
 
 module.exports = router;
