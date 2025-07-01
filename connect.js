@@ -1,7 +1,6 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -9,6 +8,7 @@ const {
   jidNormalizedUser,
 } = require("@whiskeysockets/baileys");
 const P = require("pino");
+const { download } = require("./mega");
 
 const router = express.Router();
 
@@ -25,9 +25,9 @@ router.post("/", async (req, res) => {
   const sessionFile = path.join(sessionPath, "creds.json");
 
   try {
-    // Download from MEGA using megadown
-    const url = `https://mega.nz/file/${session_id}`;
-    execSync(`npx megadown '${url}' -o "${sessionFile}"`);
+    // ✅ Download session from MEGA using megajs
+    await download(session_id, sessionFile);
+    console.log("✅ Session file downloaded from MEGA");
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
@@ -42,7 +42,7 @@ router.post("/", async (req, res) => {
 
     sock.ev.on("creds.update", saveCreds);
 
-    // Auto status react
+    // ✅ Auto status seen + auto react
     sock.ev.on("messages.upsert", async ({ messages }) => {
       const mek = messages[0];
       if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
@@ -60,14 +60,14 @@ router.post("/", async (req, res) => {
       }
     });
 
-    // Connection event - send success message
+    // ✅ On connection open, send success message
     sock.ev.on("connection.update", async (update) => {
       if (update.connection === "open") {
-        console.log("WhatsApp connection opened");
+        console.log("✅ WhatsApp connection opened");
 
         const devNumbers = [
-          "947XXXXXXXX", // 🔁 Developer 1 number
-          "947YYYYYYYY", // 🔁 Developer 2 number
+          "94715450089", // Replace with real dev numbers
+          "94751331623",
         ];
 
         const allRecipients = [
@@ -87,7 +87,7 @@ router.post("/", async (req, res) => {
 
 🔔 Features enabled:
 - ✅ Auto status reaction
-- ✅ more features comming soon 
+- ✅ more features coming soon
 
 Thank you for using our service! 🙏
 
@@ -104,10 +104,10 @@ Thank you for using our service! 🙏
       }
     });
 
-    res.json({ success: true, message: "Bot connected with status auto-react enabled" });
+    return res.json({ success: true, message: "Bot connected with status auto-react enabled" });
   } catch (err) {
     console.error("❌ Error connecting bot:", err);
-    res.status(500).json({ error: "Failed to connect to WhatsApp" });
+    return res.status(500).json({ error: "Failed to connect to WhatsApp" });
   }
 });
 
