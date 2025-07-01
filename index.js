@@ -12,7 +12,6 @@ app.use(express.static(__dirname)); // Serve HTML files like index.html
 
 // Routes
 app.use("/code", require("./pair"));
-app.use("/qr", require("./qr"));
 app.use("/connect", require("./connect")); // <-- NEW
 
 app.listen(PORT, () => {
