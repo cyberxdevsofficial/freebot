@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
 
     try {
-      let RobinPairWeb = makeWASocket({
+      const RobinPairWeb = makeWASocket({
         auth: {
           creds: state.creds,
           keys: makeCacheableSignalKeyStore(
@@ -44,12 +44,15 @@ router.get("/", async (req, res) => {
         browser: Browsers.macOS("Safari"),
       });
 
-      if (!RobinPairWeb.authState.creds.registered) {
+      // ✅ Check if not registered, then request pair code
+      if (!state.creds.registered) {
         await delay(1500);
         num = num.replace(/[^0-9]/g, "");
         const code = await RobinPairWeb.requestPairingCode(num);
+        console.log("✅ Pairing code generated:", code);
+
         if (!res.headersSent) {
-          await res.send({ code });
+          return res.json({ code });
         }
       }
 
@@ -62,13 +65,12 @@ router.get("/", async (req, res) => {
 
             await delay(5000);
 
-            // ✅ Check if creds.json exists
             if (!fs.existsSync(SESSION_FILE)) {
               console.log("❌ Session file not found.");
               return;
             }
 
-            // ✅ Generate MEGA session ID
+            // Generate MEGA session ID
             const randomMegaId = (length = 6, numberLength = 4) => {
               const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
               let result = "";
@@ -85,7 +87,6 @@ router.get("/", async (req, res) => {
             );
 
             const string_session = megaUrl.replace("https://mega.nz/file/", "");
-
             const user_jid = jidNormalizedUser(RobinPairWeb.user.id);
 
             const sid = `*✅ MAHII-MD Session Connected Successfully!*\n\n🔐 *Session ID:* \n👉 ${string_session} 👈\n\n📌 *Please copy and paste this Session ID into your* \`config.js\` *file to activate your bot.*\n\n💬 *Need help? Contact support:* \nhttps://wa.me/94715450089`;
@@ -105,7 +106,7 @@ router.get("/", async (req, res) => {
             console.log("✅ Session link sent");
 
             await delay(1000);
-            removeFile(SESSION_DIR); // Cleanup after
+            removeFile(SESSION_DIR);
             process.exit(0);
           } catch (e) {
             console.error("❌ Upload or message failed:", e);
