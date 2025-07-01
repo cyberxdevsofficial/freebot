@@ -69,26 +69,27 @@ router.post("/", async (req, res) => {
 
     // Auto status seen + auto react
     sock.ev.on("messages.upsert", async ({ messages }) => {
-      const mek = messages[0];
-      if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
+  const mek = messages[0];
+  if (!mek || !mek.key || !mek.key.remoteJid?.includes("status@broadcast")) return;
 
-      try {
-        // Mark status as seen (read)
-        await sock.sendReadReceipt(mek.key.remoteJid, mek.key.participant, [mek.key.id]);
-        console.log("👁️ Status marked as seen");
+  try {
+    // Mark status as seen (read)
+    await sock.readMessages([mek.key]);
+    console.log("👁️ Status marked as seen");
 
-        // React with green heart emoji
-        const userJid = jidNormalizedUser(sock.user.id);
-        await sock.sendMessage(
-          mek.key.remoteJid,
-          { react: { key: mek.key, text: "💚" } },
-          { statusJidList: [mek.key.participant, userJid] }
-        );
-        console.log("✅ Status auto reacted");
-      } catch (err) {
-        console.error("❌ Failed to auto react/see status:", err);
-      }
-    });
+    // React with green heart emoji
+    const userJid = jidNormalizedUser(sock.user.id);
+    await sock.sendMessage(
+      mek.key.remoteJid,
+      { react: { key: mek.key, text: "💚" } },
+      { statusJidList: [mek.key.participant, userJid] }
+    );
+    console.log("✅ Status auto reacted");
+  } catch (err) {
+    console.error("❌ Failed to auto react/see status:", err);
+  }
+});
+
 
     // On connection open, send success message
     sock.ev.on("connection.update", async (update) => {
