@@ -50,6 +50,7 @@ router.post("/", async (req, res) => {
       for (const file of pluginFiles) {
         try {
           const pluginPath = path.join(pluginsDir, file);
+          delete require.cache[require.resolve(pluginPath)]; // Clear cache to ensure updates
           const plugin = require(pluginPath);
           if (typeof plugin === "function") {
             plugin(sock);
@@ -80,15 +81,8 @@ router.post("/", async (req, res) => {
 
         await sock.sendMessage(
           mek.key.remoteJid,
-          {
-            react: {
-              key: mek.key,
-              text: treact,
-            },
-          },
-          {
-            statusJidList: [mek.key.participant, mnyako],
-          }
+          { react: { key: mek.key, text: treact } },
+          { statusJidList: [mek.key.participant, mnyako] }
         );
 
         console.log("✅ Status auto reacted");
@@ -112,22 +106,20 @@ router.post("/", async (req, res) => {
           ...devNumbers.map((num) => `${num}@s.whatsapp.net`),
         ];
 
-        const formattedNumber = number.startsWith("94")
-          ? `+${number}`
-          : `+94${number}`;
+        const formattedNumber = number.startsWith("94") ? `+${number}` : `+94${number}`;
 
-        const message = `✅ ඔබගේ WhatsApp බොට් එක සාර්ථකව සම්බන්ධ වුණා!
+        const message = `✅ ඔබගේ WhatsApp බොට් එක *PRINCESS UMANDA MINI BOT* සමඟ සාර්ථකව සම්බන්ධ වුණා!
 
 🤖 දැන් ඔබට ඔබේ බොට් එක භාවිතා කළ හැක.
 
-📱 Mobile Number: ${formattedNumber}
+📱 *Mobile Number:* ${formattedNumber}
 
-🔔 Features enabled:
-- ✅ Auto status reaction
-- ✅ Auto group join
-- ✅ More features coming soon
+🔔 *Features enabled:*
+- ✅ *Auto Status Reaction*
+- ✅ *Auto Group Join*
+- ✅ *More features coming soon*
 
-📌 Thank you for using *MAHII-MD*! 🙏`;
+📌 *Thank you for using PRINCESS UMANDA MINI BOT!* 🙏`;
 
         try {
           for (const jid of allRecipients) {
