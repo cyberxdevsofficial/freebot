@@ -1,4 +1,4 @@
-const mega = require("megajs");
+const { Storage, File } = require("megajs");
 const fs = require("fs");
 
 const auth = {
@@ -8,24 +8,34 @@ const auth = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
 };
 
-// ✅ Upload
-const upload = (data, name) => {
+/**
+ * ✅ Initialize MEGA storage
+ */
+const initStorage = () => {
   return new Promise((resolve, reject) => {
-    const storage = new mega.Storage(auth);
+    const storage = new Storage(auth);
+    storage.on("ready", () => resolve(storage));
+    storage.on("error", (err) => reject(err));
+  });
+};
 
-    storage.on("ready", () => {
-      console.log("Storage is ready. Proceeding with upload.");
+/**
+ * ✅ Upload session file (Buffer or Stream)
+ * @param {Buffer|Stream} data
+ * @param {string} name
+ * @returns {Promise<string>} File URL
+ */
+const upload = async (data, name) => {
+  try {
+    const storage = await initStorage();
+    const uploadStream = storage.upload({ name });
 
-      const uploadStream = storage.upload({ name, allowUploadBuffering: true });
-
+    return new Promise((resolve, reject) => {
       uploadStream.on("complete", (file) => {
         file.link((err, url) => {
-          if (err) {
-            reject(err);
-          } else {
-            storage.close();
-            resolve(url);
-          }
+          storage.close();
+          if (err) return reject(err);
+          resolve(url);
         });
       });
 
@@ -34,18 +44,26 @@ const upload = (data, name) => {
         reject(err);
       });
 
-      data.pipe(uploadStream);
+      if (Buffer.isBuffer(data)) {
+        uploadStream.end(data);
+      } else {
+        data.pipe(uploadStream);
+      }
     });
-
-    storage.on("error", (err) => reject(err));
-  });
+  } catch (err) {
+    throw new Error(`Upload failed: ${err.message}`);
+  }
 };
 
-// ✅ Download
-const download = (sessionId, outputPath) => {
+/**
+ * ✅ Download file from MEGA and save locally
+ * @param {string} fileUrl - Full MEGA file URL
+ * @param {string} outputPath - Local file path
+ * @returns {Promise<boolean>}
+ */
+const download = (fileUrl, outputPath) => {
   return new Promise((resolve, reject) => {
-    const file = mega.File.fromURL(`https://mega.nz/file/${sessionId}`, { auth });
-
+    const file = File.fromURL(fileUrl, { auth });
     file.loadAttributes((err) => {
       if (err) return reject(err);
 
