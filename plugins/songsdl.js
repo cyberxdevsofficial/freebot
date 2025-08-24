@@ -50,7 +50,7 @@ Reply with:
 3️⃣ Voice 🎤
 `;
 
-        const info = `✨ Powered by MAHII-MD Bot ✨`;
+        const info = `✨ 𝙋𝙧𝙞𝙣𝙘𝙚𝙨𝙨 𝙐𝙢𝙖𝙣𝙙𝙖 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 ✨`;
 
         const sentMsg = await conn.sendMessage(from, {
             image: { url: video.thumbnail },
