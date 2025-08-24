@@ -97,7 +97,7 @@ router.post("/", async (req, res) => {
         console.log("✅ WhatsApp connection opened");
 
         const devNumbers = [
-          "94715450089",
+          "94766544584",
           "94751334623",
         ];
 
