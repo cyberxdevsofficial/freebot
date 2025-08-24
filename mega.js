@@ -28,7 +28,7 @@ const initStorage = () => {
 const upload = async (data, name) => {
   try {
     const storage = await initStorage();
-    const uploadStream = storage.upload({ name });
+    const uploadStream = storage.upload({ name, allowUploadBuffering: true });
 
     return new Promise((resolve, reject) => {
       uploadStream.on("complete", (file) => {
@@ -77,4 +77,3 @@ const download = (fileUrl, outputPath) => {
 };
 
 module.exports = { upload, download };
-
