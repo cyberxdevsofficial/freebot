@@ -9,7 +9,7 @@ const auth = {
 };
 
 /**
- * ✅ Initialize MEGA storage
+ * Initialize MEGA storage
  */
 const initStorage = () => {
   return new Promise((resolve, reject) => {
@@ -20,50 +20,41 @@ const initStorage = () => {
 };
 
 /**
- * ✅ Upload session file (Buffer or Stream)
- * @param {Buffer|Stream} data
- * @param {string} name
- * @returns {Promise<string>} File URL
+ * Upload session file (Buffer or Stream)
  */
 const upload = async (data, name) => {
-  try {
-    const storage = await initStorage();
-    const uploadStream = storage.upload({ name, allowUploadBuffering: true });
+  const storage = await initStorage();
+  const uploadStream = storage.upload({ name, allowUploadBuffering: true });
 
-    return new Promise((resolve, reject) => {
-      uploadStream.on("complete", (file) => {
-        file.link((err, url) => {
-          storage.close();
-          if (err) return reject(err);
-          resolve(url);
-        });
-      });
-
-      uploadStream.on("error", (err) => {
+  return new Promise((resolve, reject) => {
+    uploadStream.on("complete", (file) => {
+      file.link((err, url) => {
         storage.close();
-        reject(err);
+        if (err) return reject(err);
+        resolve(url);
       });
-
-      if (Buffer.isBuffer(data)) {
-        uploadStream.end(data);
-      } else {
-        data.pipe(uploadStream);
-      }
     });
-  } catch (err) {
-    throw new Error(`Upload failed: ${err.message}`);
-  }
+    uploadStream.on("error", (err) => {
+      storage.close();
+      reject(err);
+    });
+
+    if (Buffer.isBuffer(data)) uploadStream.end(data);
+    else data.pipe(uploadStream);
+  });
 };
 
 /**
- * ✅ Download file from MEGA and save locally
- * @param {string} fileUrl - Full MEGA file URL
- * @param {string} outputPath - Local file path
- * @returns {Promise<boolean>}
+ * Download file from MEGA and save locally
+ * Accepts full URL OR just the file ID
  */
-const download = (fileUrl, outputPath) => {
+const download = (fileIdOrUrl, outputPath) => {
   return new Promise((resolve, reject) => {
-    const file = File.fromURL(fileUrl, { auth });
+    // If only ID is passed, prepend URL
+    let url = fileIdOrUrl;
+    if (!/^https?:\/\//.test(fileIdOrUrl)) url = `https://mega.nz/file/${fileIdOrUrl}`;
+
+    const file = File.fromURL(url, { auth });
     file.loadAttributes((err) => {
       if (err) return reject(err);
 
