@@ -1,78 +1,66 @@
-const { cmd, commands } = require('../command');
-const yts = require('yt-search');
-const { fetchJson } = require('../lib/functions');
+const { cmd } = require("../command");
+const yts = require("yt-search");
+const { fetchJson } = require("../lib/functions");
 
+/**
+ * Extract YouTube Video ID from URL
+ */
 function extractYouTubeId(url) {
     const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     const match = url.match(regex);
     return match ? match[1] : null;
 }
 
+/**
+ * Convert any YouTube URL to standard watch link
+ */
 function convertYouTubeLink(q) {
     const videoId = extractYouTubeId(q);
-    if (videoId) {
-        return ` https://www.youtube.com/watch?v=${videoId}`;
-    }
+    if (videoId) return `https://www.youtube.com/watch?v=${videoId}`;
     return q;
 }
 
 cmd({
-    pattern: "song1",
-    alias: "play1",
-    desc: "song dl.",
+    pattern: "song",
+    alias: ["play", "songdl"],
+    desc: "Download a song from YouTube",
     react: "🎵",
     category: "download",
     filename: __filename
-},
-async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+}, async (conn, mek, m, { from, quoted, body, q, reply }) => {
     try {
         q = convertYouTubeLink(q);
-        if (!q) return reply("*`Need title or Link`*");
+        if (!q) return reply("*Please provide a YouTube link or title!*");
 
         const search = await yts(q);
-        const data = search.videos[0];
-        const url = data.url;
+        const video = search.videos[0];
+        if (!video) return reply("*No video found for your query!*");
 
-        let desc = `
-┏━❮ SON INFO ❯━
-┃🤖 *ᴛɪᴛʟᴇ : ${data.title}*
-┃📑 *ᴅᴜʀᴀᴛɪᴏɴ :* ${data.timestamp}* .
-┃🔖 *ᴠɪᴇᴡꜱ : ${data.views}*
-┃📟 *ᴜᴘʟᴏᴀᴅ : ${data.ago}*
-┗━━━━━━━━━━━━━━𖣔𖣔
-╭━━〔🔢 *REPLY NUMBER*〕━━┈⊷
-┃•1 Download Audio 🎧
-┃•2 Download Document  📁
-┃•3 Download Voice 🎤
-╰──────────────┈⊷
-
-✨ *𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗣𝗥𝗜𝗡𝗖𝗘𝗦𝗦 𝗨𝗠𝗔𝗡𝗗𝗔* ✨
+        const url = video.url;
+        const desc = `
+┏━❮ *SONG INFO* ❯━
+┃🎵 *Title:* ${video.title}
+┃⏱ *Duration:* ${video.timestamp}
+┃👁 *Views:* ${video.views}
+┃📅 *Uploaded:* ${video.ago}
+┗━━━━━━━━━━━━━━
+Reply with:
+1️⃣ Audio 🎧
+2️⃣ Document 📁
+3️⃣ Voice 🎤
 `;
 
-        let info = `
-✨ *𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗣𝗥𝗜𝗡𝗖𝗘𝗦𝗦 𝗨𝗠𝗔𝗡𝗗𝗔* ✨
-`;
+        const info = `✨ Powered by MAHII-MD Bot ✨`;
 
         const sentMsg = await conn.sendMessage(from, {
-            image: { url: data.thumbnail },
-            caption: desc,
-            contextInfo: {
-                mentionedJid: ['94760663483@s.whatsapp.net'],
-                groupMentions: [],
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363349375266377@newsletter',
-                    newsletterName: "𝗣𝗥𝗜𝗡𝗖𝗘𝗦𝗦 𝗨𝗠𝗔𝗡𝗗𝗔",
-                    serverMessageId: 999
-                }
-            }
+            image: { url: video.thumbnail },
+            caption: desc
         }, { quoted: mek });
 
         const messageID = sentMsg.key.id;
 
-        conn.ev.on('messages.upsert', async (messageUpdate) => {
-            const mek = messageUpdate.messages[0];
+        conn.ev.on("messages.upsert", async (update) => {
+            const mek = update.messages[0];
             if (!mek?.message) return;
 
             const messageType =
@@ -81,86 +69,55 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
                 mek.message?.imageMessage?.caption ||
                 '';
 
-            const from = mek.key.remoteJid;
-            const sender = mek.key.participant || mek.key.remoteJid;
-
             const isReplyToSentMsg =
-                !!mek.message.extendedTextMessage &&
-                mek.message.extendedTextMessage.contextInfo?.stanzaId === messageID;
+                mek.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
 
-            if (isReplyToSentMsg) {
-                if (messageType === '1') {
-                    await conn.sendMessage(from, { react: { text: '📥', key: mek.key } });
+            if (!isReplyToSentMsg) return;
 
-                    const down = await fetchJson(`https://lakiya-api-site.vercel.app/download/ytmp3new?url=${url}&type=mp3`);
-                    const lakiDown = down.result.downloadUrl;
+            const apiUrl = `https://lakiya-api-site.vercel.app/download/ytmp3new?url=${url}&type=mp3`;
+            const down = await fetchJson(apiUrl);
+            const downloadUrl = down.result.downloadUrl;
 
-                    await conn.sendMessage(from, { react: { text: '📤', key: mek.key } });
-                    await conn.sendMessage(from, {
-                        audio: { url: lakiDown },
-                        mimetype: "audio/mpeg",
-                        contextInfo: {
-                            externalAdReply: {
-                                title: data.title,
-                                body: data.videoId,
-                                mediaType: 1,
-                                sourceUrl: data.url,
-                                thumbnailUrl: "https://i.ibb.co/NdJzs5WY/SulaMd.jpg",
-                                renderLargerThumbnail: true,
-                                showAdAttribution: true
-                            }
+            // Audio
+            if (messageType === "1") {
+                await conn.sendMessage(from, { react: { key: mek.key, text: "📥" } });
+                await conn.sendMessage(from, {
+                    audio: { url: downloadUrl },
+                    mimetype: "audio/mpeg",
+                    contextInfo: {
+                        externalAdReply: {
+                            title: video.title,
+                            body: video.videoId,
+                            mediaType: 1,
+                            sourceUrl: video.url,
+                            thumbnailUrl: video.thumbnail,
                         }
-                    }, { quoted: mek });
-                    await conn.sendMessage(from, {});
+                    }
+                }, { quoted: mek });
 
-                } else if (messageType === '2') {
-                    await conn.sendMessage(from, { react: { text: '📥', key: mek.key } });
+            // Document
+            } else if (messageType === "2") {
+                await conn.sendMessage(from, { react: { key: mek.key, text: "📥" } });
+                await conn.sendMessage(from, {
+                    document: { url: downloadUrl },
+                    mimetype: "audio/mp3",
+                    fileName: `${video.title}.mp3`,
+                    caption: info
+                }, { quoted: mek });
 
-                    const down = await fetchJson(`https://lakiya-api-site.vercel.app/download/ytmp3new?url=${url}&type=mp3`);
-                    const lakiDown = down.result.downloadUrl;
-
-                    await conn.sendMessage(from, { react: { text: '📤', key: mek.key } });
-                    await conn.sendMessage(from, {
-                        document: { url: lakiDown },
-                        mimetype: "audio/mp3",
-                        fileName: `${data.title}.mp3`,
-                        caption: info
-                    }, { quoted: mek });
-                    await conn.sendMessage(from, {});
-
-                } else if (messageType === '3') {
-                    await conn.sendMessage(from, { react: { text: '📥', key: mek.key } });
-
-                    const down = await fetchJson(`https://lakiya-api-site.vercel.app/download/ytmp3new?url=${url}&type=mp3`);
-                    const lakiDown = down.result.downloadUrl;
-
-                    await conn.sendMessage(from, { react: { text: '📤', key: mek.key } });
-                    await conn.sendMessage(from, {
-                        audio: { url: lakiDown },
-                        mimetype: "audio/mpeg",
-                        ptt: "true",
-                        contextInfo: {
-                            externalAdReply: {
-                                title: data.title,
-                                body: data.videoId,
-                                mediaType: 1,
-                                sourceUrl: data.url,
-                                thumbnailUrl: "https://i.ibb.co/NdJzs5WY/SulaMd.jpg",
-                                renderLargerThumbnail: true,
-                                showAdAttribution: true
-                            }
-                        }
-                    }, { quoted: mek });
-                    await conn.sendMessage(from, {});
-                }
+            // Voice note
+            } else if (messageType === "3") {
+                await conn.sendMessage(from, { react: { key: mek.key, text: "📥" } });
+                await conn.sendMessage(from, {
+                    audio: { url: downloadUrl },
+                    mimetype: "audio/mpeg",
+                    ptt: true
+                }, { quoted: mek });
             }
         });
 
-    } catch (e) {
-        console.log(e);
-        reply(`${e}`);
+    } catch (err) {
+        console.log(err);
+        reply(`❌ Error: ${err.message}`);
     }
 });
-
-// ✅ UPDATED FOOTER
-// ✨ *𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗣𝗥𝗜𝗡𝗖𝗘𝗦𝗦 𝗨𝗠𝗔𝗡𝗗𝗔* ✨
