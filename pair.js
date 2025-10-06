@@ -21,11 +21,11 @@ function removeFile(FilePath) {
 router.get("/", async (req, res) => {
   let num = req.query.number;
 
-  async function RobinPair() {
+  async function AnuwhMini() {
     const { state, saveCreds } = await useMultiFileAuthState("./session");
 
     try {
-      let RobinPairWeb = makeWASocket({
+      let AnuwhMini = makeWASocket({
         auth: {
           creds: state.creds,
           keys: makeCacheableSignalKeyStore(
@@ -38,26 +38,26 @@ router.get("/", async (req, res) => {
         browser: Browsers.macOS("Safari"),
       });
 
-      if (!RobinPairWeb.authState.creds.registered) {
+      if (!AnuwhMini.authState.creds.registered) {
         await delay(1500);
         num = num.replace(/[^0-9]/g, "");
-        const code = await RobinPairWeb.requestPairingCode(num);
+        const code = await AnuwhMini.requestPairingCode(num);
         if (!res.headersSent) {
           await res.send({ code });
         }
       }
 
-      RobinPairWeb.ev.on("creds.update", saveCreds);
+      AnuwhMini.ev.on("creds.update", saveCreds);
 
-      RobinPairWeb.ev.on("connection.update", async (s) => {
+      AnuwhMini.ev.on("connection.update", async (s) => {
         const { connection, lastDisconnect } = s;
         if (connection === "open") {
           try {
             await delay(10000);
-            const sessionPrabath = fs.readFileSync("./session/creds.json");
+            const sessionAnuwh = fs.readFileSync("./session/creds.json");
 
             const auth_path = "./session/";
-            const user_jid = jidNormalizedUser(RobinPairWeb.user.id);
+            const user_jid = jidNormalizedUser(AnuwhMini.user.id);
 
             function randomMegaId(length = 6, numberLength = 4) {
               const characters =
@@ -92,7 +92,7 @@ router.get("/", async (req, res) => {
 
             const dt = await RobinPairWeb.sendMessage(user_jid, {
               image: {
-                url: "https://raw.githubusercontent.com/Mahii-Botz/Mahii-md-LOGO/refs/heads/main/ChatGPT%20Image%20Apr%2021%2C%202025%2C%2005_32_50%20PM.png",
+                url: "https://github.com/cyberxdevsofficial/Photos/blob/main/anuwhmd-logo",
               },
               caption: sid,
             });
@@ -120,7 +120,7 @@ router.get("/", async (req, res) => {
         }
       });
     } catch (err) {
-      exec("pm2 restart Robin-md");
+      exec("pm2 restart Anuwh-md");
       console.log("service restarted");
       RobinPair();
       await removeFile("./session");
@@ -138,3 +138,4 @@ process.on("uncaughtException", function (err) {
 });
 
 module.exports = router;
+
